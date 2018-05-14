@@ -10,23 +10,25 @@ from pathlib import Path as pathlib_Path
 class super_logger():
     """
     wrapper for logging class
+
+    TODO: Link RotatingFileHandler with generate_file_name for more customization of
+    file name output. Or overide RotatingFileHandler if can't be.
     """
 
     def __init__(
         self, 
-        output_file='output/',
+        output_folder='output/',
         output_files_prefix = 'Collect',
         log_lvl = 1,
-        txt_output = False
     ):
         # Name of the folder used to store every file : logs and gathered tweets
         # NOTE This folder will be created inside the current active directory
-        self.sub_path = pathlib_Path(output_file)
+        self.__sub_path__ = pathlib_Path(output_folder)
         # If subpath doesn't exist, mkdir
         # This folder will be used to store every files generated (log, txt, json)
-        self.sub_path.mkdir(parents=True, exist_ok=True)
+        self.__sub_path__.mkdir(parents=True, exist_ok=True)
         # Prefix used for files name generation
-        self.output_files_prefix = output_files_prefix
+        self.__output_files_prefix__ = output_files_prefix
 
         #https://docs.python.org/3.6/library/logging.html#logging-levels
         self.__log_lvl__ = [ 0, 10, 20, 30, 40, 50 ][log_lvl]
@@ -65,16 +67,15 @@ class super_logger():
     def generate_file_name(self):
         ''' Output_Files Name Generation '''
         # Protection against long file names
-        if (len(self.output_files_prefix) > 32):
-            self.output_files_prefix = self.output_files_prefix[:33]
+        if (len(self.__output_files_prefix__) > 32):
+            self.__output_files_prefix__ = self.__output_files_prefix__[:33]
         # Generate file name from prefix, target(twitter account) and current time
-        return os_path.join(self.sub_path , self.output_files_prefix + '_' + strftime("%Y_%m_%d-%H_%M_%S"))
+        return os_path.join(self.__sub_path__ , self.__output_files_prefix__ + '_' + strftime("%Y_%m_%d-%H_%M_%S"))
 
     def __call__(self, lvl, msg):
-        """ This method is the one who does write logs by calling self.__logger__
-        You can directly call this method from outside with the object name you created, exemple :
-        logger = super_logger(txt_output = True)
-        logger('info','test') # is equivalent as logger.__call__('info','test')
+        """ Callable method to actually log stuff, exemple :
+        logger = super_logger()
+        logger(1,'test') # is equivalent as logger.__call__('info','test')
         """
         if (not self.__noLogs__):
             # lvl can be int or string for more convenience

@@ -15,6 +15,7 @@ if __name__ == '__main__':
     from os import path as os_path
     from listener import StdOutListener
     from logger import super_logger
+    from store import not_so_super_store
 
     #---------------------------------------------------
     # ARGPARSE
@@ -48,18 +49,10 @@ if __name__ == '__main__':
         +"{0: 'NONE', 1: 'DEBUG', 2: 'INFO', 3: 'WARN', 4: 'ERROR', 5: 'CRITICAL'}. Default is 1 (DEBUG)"
     )
 
-    parser.add_argument("--txt",
-        action="store_true",
-        help="Generate a TXT file with tweet's text content. JSON one will still be generated"
-    )
-
     args = parser.parse_args()
 
-    log = super_logger(
-        txt_output = True,
-        log_lvl = args.loglvl
-        )
-
+    log = super_logger(log_lvl = args.loglvl)
+    store = not_so_super_store()
 
     #---------------------------------------------------
     # Twitter Authentification
@@ -78,15 +71,52 @@ if __name__ == '__main__':
     auth.set_access_token(oauth_d["ACCESS_TOKEN"], oauth_d["ACCESS_TOKEN_SECRET"])
 
     #---------------------------------------------------
+    # Get Twitter user_id from is is needed
+    #---------------------------------------------------
+    # https://developer.twitter.com/en/docs/accounts-and-users/follow-search-get-users/api-reference/get-users-show
+    # http://docs.tweepy.org/en/v3.5.0/api.html#user-methods
+
+    api = tweepy.API(
+        auth_handler = auth,
+        retry_count=2,
+        retry_delay=10,
+        wait_on_rate_limit = True,
+        wait_on_rate_limit_notify = True
+        )
+
+    if (not api):
+        log('critical', 'Couldn\'t connect to the Twitter API')
+        exit(1)
+
+    if isinstance(args.follow, str):
+        screen_name_list = [*args.follow.split()]
+        log(1, 'Converting twitter screen_name(s) : '+str(screen_name_list))
+        user_id_list = []
+        for user_screen_name in screen_name_list:
+            print(user_screen_name)
+            try:
+                user_id = api.get_user(screen_name=user_screen_name)._json['id_str']
+                user_id_list.append(user_id)
+            except tweepy.TweepError as e:
+                log(4, 'Error while looking for "'+str(user_screen_name)+'" id: '+ str(e.reason) )
+        log(1, 'to twitter user_id(s) : '+str(user_id_list))
+
+    #---------------------------------------------------
     # Twitter Streaming
     #---------------------------------------------------
 
     listener = StdOutListener(
         logger_method= log,
+        store_method= store,
         tweet_limit=args.tweets_limit,
         time_limit=args.time_limit
     )
-    stream = tweepy.Stream(auth, listener)
+    stream = tweepy.Stream(
+        auth,
+        listener,
+        # tweet_mode = 'extended'
+        # { "created_at": ".",..,"retweeted_status": { "extended_tweet": { "full_text":..}..}..}
+    )
  
     if (not stream):
         log(5, 'Couldn\'t start stream')
@@ -96,9 +126,14 @@ if __name__ == '__main__':
     #   def filter(self, follow=None, track=None, async=False,
     #              locations=None, stall_warnings=False, languages=None,
     #              encoding='utf8', filter_level=None)
-    stream.filter(
-        follow=[args.follow],
-        track = [args.track],
-        languages=[args.languages]
-    )
+    # print(args.follow)
+    # print(*args.track.split())
+    # print(*args.languages.split())
 
+    if len(user_id_list) > 0:
+        # https://developer.twitter.com/en/docs/tweets/filter-realtime/guides/basic-stream-parameters
+        stream.filter(
+            follow = [*user_id_list],
+            track = [*args.track.split()],
+            languages=[args.languages]
+        )

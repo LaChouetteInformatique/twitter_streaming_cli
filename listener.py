@@ -11,6 +11,7 @@ class StdOutListener(tweepy.streaming.StreamListener):
     def __init__(
         self,
         logger_method=print,
+        store_method=None,
         tweet_limit=0,
         time_limit=0
     ):
@@ -32,6 +33,7 @@ class StdOutListener(tweepy.streaming.StreamListener):
 
         self.log = logger_method
         #self.log('info','Listener initialised')
+        self.store = store_method
 
     def keep_alive(self):
         """ https://developer.twitter.com/en/docs/tweets/filter-realtime/guides/connecting
@@ -77,9 +79,9 @@ class StdOutListener(tweepy.streaming.StreamListener):
             limit resets whenever you're about to run out of calls
         """
 
-        #TODO : store in JSON and/or TXT and/or Database
         print('Tweet text: ' + status.text)
-        self.log('debug', status.text )
+        if (self.store != None):
+            self.store(status._json)
 
         # There are many options in the status object,
         # hashtags can be very easily accessed.
