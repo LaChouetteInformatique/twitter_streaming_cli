@@ -3,8 +3,7 @@
 '''
 This Command line App stream new tweets from a given twitter's account
 
-TODO: store tweets to files (with size limit) and/or to some Database (firebase/mongoDB alwaysdata?)
-TODO: https://www.toptal.com/python/beginners-guide-to-concurrency-and-parallelism-in-python
+ref: https://developer.twitter.com/en/docs/tweets/filter-realtime/guides/basic-stream-parameters
 '''
 
 if __name__ == '__main__':
@@ -22,8 +21,7 @@ if __name__ == '__main__':
     #---------------------------------------------------
     parser = argparse.ArgumentParser(
         description="Collect and store to disk the last $limit tweets from: $target's twitter account"
-        +"see https://developer.twitter.com/en/docs/tweets/filter-realtime/guides/basic-stream-parameters"
-        +"for more details on realtime tweets filters"
+        +"ref: https://developer.twitter.com/en/docs/tweets/filter-realtime/guides/basic-stream-parameters"
         )
     
     parser.add_argument('-f',"--follow",
