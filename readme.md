@@ -44,4 +44,3 @@ Run
 
 * Thanks to the teacher who pushed me to make this as a tweetter discovery exercice
 * Hat tip to anyone who's code was used
-* Thanks to [jbt.github.io](https://jbt.github.io/markdown-editor/) for their markdown-editor
